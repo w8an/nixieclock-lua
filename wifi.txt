@@ -1,0 +1,13 @@
+-- wifi.txt
+
+To enable wifi, edit config.lua
+uncomment the following lines:
+
+config.wifi = true
+config.sntp = true
+
+In the config.data.wifi block, uncomment and set the following lines:
+  ssid = "Wifi Access Point Name",
+  pass = "Wifi Password",
+  
+Use your own Wifi ssid and password

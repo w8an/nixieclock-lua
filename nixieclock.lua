@@ -2,14 +2,14 @@
 -- Whitecat Nixie Clock
 -- Lua RTOS
 -- Author:  Steven R. Stuart
--- Jan 2020
+-- Jan 2020, Jul 2025
 ---------------------------------
 
 --  GPIO Usage
 --  ----------
---  tube position 
+--  tube position
 --    GPIO 21  out
---    GPIO 22  out 
+--    GPIO 22  out
 --    GPIO 23  out
 --    GPIO 25  out
 --    GPIO 26  out
@@ -20,7 +20,7 @@
 --    GPIO 17  out
 --    GPIO 18  out
 --    GPIO 19  out
---    
+--
 --  colons
 --    GPIO 32  out
 --    GPIO 33  out
@@ -30,7 +30,7 @@
 --
 --  12/24 hour select switch
 --    GPIO 34  in
--- 
+--
 --  select time zone
 --    GPIO 15  in
 --
@@ -57,13 +57,13 @@ outp_neopix = pio.GPIO13
 ---==[ DISPLAY HANDLER ]==---
 mpx_speed = 2     -- display update (in milliseconds)
 
--- tube anodes (lsd to msd) and digit bcd (abcd) output pins, 
---tube_pos = {pio.GPIO21, pio.GPIO22, pio.GPIO23, pio.GPIO25, pio.GPIO26, pio.GPIO27} 
-tube_pos = {pio.GPIO27, pio.GPIO26, pio.GPIO25, pio.GPIO23, pio.GPIO22, pio.GPIO21} 
-digit_bcd = {pio.GPIO16, pio.GPIO17, pio.GPIO18, pio.GPIO19} -- ABCD      
-colons = {pio.GPIO32, pio.GPIO33} 
-  
-time_value = {15, 15, 15, 15, 15, 15}  -- {sec, 10sec, 1m, 10m, 1h, 10h}  
+-- tube anodes (lsd to msd) and digit bcd (abcd) output pins,
+--tube_pos = {pio.GPIO21, pio.GPIO22, pio.GPIO23, pio.GPIO25, pio.GPIO26, pio.GPIO27}
+tube_pos = {pio.GPIO27, pio.GPIO26, pio.GPIO25, pio.GPIO23, pio.GPIO22, pio.GPIO21}
+digit_bcd = {pio.GPIO16, pio.GPIO17, pio.GPIO18, pio.GPIO19} -- ABCD
+colons = {pio.GPIO32, pio.GPIO33}
+
+time_value = {15, 15, 15, 15, 15, 15}  -- {sec, 10sec, 1m, 10m, 1h, 10h}
 date_value = {15, 15, 15, 15, 15, 15}  -- {mo, 10mo, 1d, 10d, 1yr, 10yr}
 nixie_disp = {15, 15, 15, 15, 15, 15}  -- this is what the multiplexer shows on the Nixies
 am_pm = 'A'
@@ -71,7 +71,7 @@ colon_disp = 0  --0 off, 1 on
 
 
 -- initialize tube position and digit bcd pins as outputs and set all to 0
-init_pins = function(ara) 
+init_pins = function(ara)
   i = 1
   repeat
     pio.pin.setdir(pio.OUTPUT, ara[i])
@@ -97,24 +97,26 @@ binarize = function(dec)
   b[1] = math.floor(dec % 2) -- lsb
   b[2] = math.floor(dec / 2 % 2)
   b[3] = math.floor(dec / 4 % 2)
-  b[4] = math.floor(dec / 8 % 2) 
+  b[4] = math.floor(dec / 8 % 2)
   return b
 end
 
 
 -- Show the nixie_disp digit at the next tube position
-nixie_control = function()  
+nixie_control = function()
   local the_tube = 1
   return function()
     pio.pin.setlow(tube_pos[the_tube])         --turn off the active display tube
     the_tube = the_tube + 1                    --choose the next tube
-    if the_tube == 7 then the_tube = 1 end     --rotate 
-    local bcd = binarize(nixie_disp[the_tube]) --get binary value to display on the tube
-    pio.pin.setval(bcd[1],digit_bcd[1])        --place BCD on Nixie driver chip
-    pio.pin.setval(bcd[2],digit_bcd[2]) 
-    pio.pin.setval(bcd[3],digit_bcd[3]) 
-    pio.pin.setval(bcd[4],digit_bcd[4]) 
-    pio.pin.sethigh(tube_pos[the_tube])        --turn on the tube
+    if the_tube == 7 then the_tube = 1 end     --rotate
+    if string.byte(nixie_disp[the_tube]) < 58 then -- display if not blank, 57 = asc'9'
+      local bcd = binarize(nixie_disp[the_tube]) --get binary value to display on the tube
+      pio.pin.setval(bcd[1],digit_bcd[1])        --place BCD on Nixie driver chip
+      pio.pin.setval(bcd[2],digit_bcd[2])
+      pio.pin.setval(bcd[3],digit_bcd[3])
+      pio.pin.setval(bcd[4],digit_bcd[4])
+      pio.pin.sethigh(tube_pos[the_tube])        --turn on the tube
+    end
   end
 end
 
@@ -122,12 +124,12 @@ end
 -- Nixie display multiplexer
 mpx = function()  --run as a thread
 
-  init_pins(tube_pos) 
+  init_pins(tube_pos)
   init_pins(digit_bcd)
   init_pins(colons)
 
   local mpx = nixie_control()
-  
+
   repeat
     mpx()
     tmr.delayms(mpx_speed)  -- single tube active time
@@ -156,7 +158,7 @@ upd_datetime = function() --run as a thread
       dt = os.date("%I", now)     -- hours [01-12]
       local lz = dt:sub(1,1) -- leading zero blanking
       if lz == '0' then
-        time_value[6] = 15  
+        time_value[6] = 15
       else
         time_value[6] = dt:sub(1,1)
       end
@@ -165,7 +167,7 @@ upd_datetime = function() --run as a thread
       time_value[6] = dt:sub(1,1)
     end
       time_value[5] = dt:sub(2,2)
-    
+
     dt = os.date("%X", now)       -- time 23:48:10
     time_value[4] = dt:sub(4,4)
     time_value[3] = dt:sub(5,5)
@@ -179,7 +181,7 @@ upd_datetime = function() --run as a thread
   until nil
 end
 
--- copy disp_ara{} to nixie_disp 
+-- copy disp_ara{} to nixie_disp
 nixie_display = function( disp_ara )
   for i = 1, 6 do
     nixie_disp[i] = disp_ara[i]
@@ -189,25 +191,25 @@ end
 scroll = function(disp_ara, ms)
 
   ms = ms or 150
-  
+
   -- work_buff initializes as: sSmMhH..sSmMhH
   -- positions 1..6 is the scroll in display
   -- positions 7 and 8 are blanks
   -- the current display is in positions 9..14
 
-  local work_buff = {} 
+  local work_buff = {}
 
   for i = 1, 6 do   -- take a copy of what is showing
-    work_buff[i+8] = nixie_disp[i] 
+    work_buff[i+8] = nixie_disp[i]
   end
-  for i = 1, 2 do   -- 
+  for i = 1, 2 do   --
     work_buff[i+6] = 15
   end
   for i = 1, 6 do -- get desired display
     work_buff[i] = disp_ara[i]
   end
 
-  local temp_disp = {}   
+  local temp_disp = {}
 
   for i = 7, 0, -1 do  -- scroll it
     for j = 1, 6 do
@@ -220,7 +222,7 @@ end
 
 
 roll = function(disp_ara)
-    
+
   local work_buff = {}
   for i = 0, 6 do
     work_buff[i] = time_value[i]
@@ -233,7 +235,7 @@ roll = function(disp_ara)
     end
     tmr.delayms(50)
   end
-  
+
 end
 
 
@@ -242,7 +244,7 @@ depoison = function()  -- runs in a thread
   local blank_disp = {15, 15, 15, 15, 15, 15}
 
   for j = 0, 9 do
-    for i = 6, 1, -1 do 
+    for i = 6, 1, -1 do
       nixie_disp[i] = j
       tmr.delayms(100)
     end
@@ -261,7 +263,7 @@ end
 show_date = function(speed)
 
   speed = speed or 150  -- milliseconds
-  
+
   scroll( date_value, speed)
   tmr.delayms(3000)
   scroll( time_value, speed)
@@ -275,20 +277,20 @@ show_ip = function()
 
     wf = net.wf.stat(true)
     --local a,b,c,d = string.match(wf.ip, "(%d+)%.(%d+)%.(%d+)%.(%d+)")
-    --print(a,b,c,d)    
-    
+    --print(a,b,c,d)
+
     local disp = {}
     local ix = 7    -- disp index
-    local show_disp = function() 
-        nixie_display(disp) 
-        tmr.delayms(1000) 
+    local show_disp = function()
+        nixie_display(disp)
+        tmr.delayms(1000)
         nixie_display(blank_disp)
         tmr.delayms(100)
     end
-    
+
     for i = 1, string.len(wf.ip) do
       local c = wf.ip:sub(i,i)
-      if( c ~= "." ) then  
+      if( c ~= "." ) then
         ix = ix - 1
         disp[ix] = c
       else  -- found end of token
@@ -303,55 +305,10 @@ show_ip = function()
 end
 
 
-init_neopix = function(port,size)  
+init_neopix = function(port,size)
     return neopixel.attach(neopixel.WS2812B, port, size)
 end
 
---[[pixel_move = function()
-
-  local pixel_length = 10
-  local pixel = 0
-  local direction = 0
-  local neo = init_neopix(outp_neopix, pixel_length)  --outp_neopix = pio.GPIO13
-  local r = 0
-  local g = 0
-  local b = 0
-  
-  return function()
-    neo:setPixel(pixel, 0, 0, 0)
-    if (direction == 0) then
-      if (pixel == pixel_length-1) then
-        direction = 1
-        pixel = pixel_length-2
-      else
-        pixel = pixel + 1
-      end
-    else
-      if (pixel == 0) then
-        direction = 0
-        pixel = 1
-      else
-        pixel = pixel - 1
-      end
-    end
-
-    r = r + 5
-    if r > 255 then 
-      r = 0 
-      g = g + 5
-      if g > 255 then
-        g = 0
-        b = b + 5
-        if b > 255 then b = 0 end
-      end
-    end
-    neo:setPixel(pixel, r, g, b)
-    neo:update()
-
-  end
-end 
-]]
-  
 get_time_zone = function()
   if get_input(inp_tz_sel) then
     return tz0
@@ -359,18 +316,18 @@ get_time_zone = function()
     return tz1
   end
 end
-  
+
 mcp = function()  -- run in a thread
 
   local hh, mm, ss
 
   --initialize user input switches
-  init_input(inp_hour_sel)  
+  init_input(inp_hour_sel)
   init_input(inp_tz_sel)
   init_input(inp_view_ip)
-  
+
   --operation schedules
-  local op = { 
+  local op = {
     showdate = function() return (ss == 10) or (ss == 40) end,
     eyecandy = function() return ss == 0 end,
     depoison = function() return (hh >= 1) and (hh <= 6) and (am_pm=='A') end,
@@ -380,65 +337,57 @@ mcp = function()  -- run in a thread
   }
 
   --pixel_mv = pixel_move()
-  
+
   repeat -- forever
-  
+
     time_zone = get_time_zone()
     hours12 = get_input( inp_hour_sel ) --set 12/24 hour flag
-    
+
     --grab time tokens for calculations
     hh = time_value[6]*10 + time_value[5]
     mm = time_value[4]*10 + time_value[3]
     ss = time_value[2]*10 + time_value[1]
 
     --select and execute operation based on op{} logic
-    if( op.showdate() ) then 
-      colon_disp = 0 
+    if( op.showdate() ) then
+      colon_disp = 0
       nixie_display(time_value)
       show_date()
       colon_disp = 1
-     
+
     elseif( op.eyecandy() ) then
       roll(time_value)
       roll(time_value)
       nixie_display(time_value)
-     
+
     elseif( op.showip() ) then
-      colon_disp = 0 
+      colon_disp = 0
       show_ip()
-      colon_disp = 1 
-      
-    elseif( op.depoison() ) then  
+      colon_disp = 1
+
+    elseif( op.depoison() ) then
       depoison()
-  
-    else 
+
+    else
       nixie_display(time_value)
-      
+
     end
-    
+
     --pixel_mv()
     tmr.delayms(500) -- yield the thread for 0.5 second
 
-  until nil  
+  until nil
 
 end
 
---[[thread.start(function() pixel_mv = pixel_move()
-  repeat
-    pixel_mv()
-    tmr.delayms(100)
-  until nil
-end)
-]]
-
 -- colon separator lamps
 colon = function()
-  
+
   local state = 0   -- 0=stopped, 1=running
   local c1 = pwm.attach(pio.GPIO32, 100, 0.25) --pin, freq, dutycycle
   local c2 = pwm.attach(pio.GPIO33, 100, 0.25)
 
-  local state_control = function() 
+  local state_control = function()
     if colon_disp == 1 and state ~= 1 then
       c1:start()
       c2:start()
@@ -447,9 +396,9 @@ colon = function()
       c1:stop()
       c2:stop()
       state = 0
-    end  
+    end
   end
-  
+
   repeat
 
     state_control()
@@ -466,8 +415,8 @@ colon = function()
         c2:setduty(i)
       end
       tmr.delayms(100)
-    end 
-    
+    end
+
   until nil
 
 end
@@ -498,8 +447,27 @@ end
 
 ---==[ SYSTEM ]==---
 
-th_mpx = thread.start(mpx)            -- start the nixie display multiplexer
+print("system starting")
+
+th_mpx = thread.start(mpx)     -- start the nixie display multiplexer
+depoison()                     -- lamp test
+th_col = thread.start(colon)   -- start colon system, NE-2 bulbs
+colon_disp = 1                 -- begin colon display
+
+if net.connected() then
+  print("Wifi network is connected")
+  net.stat()   -- show status on term
+  show_ip()    -- show ip on nixie
+else
+  print("Wifi network has NOT connected !")
+  repeat
+    depoison()
+  until nil
+end
+
+collectgarbage("count")
+
 th_udt = thread.start(upd_datetime)   -- start date/time updater
 th_mcp = thread.start(mcp)            -- start scheduler
-th_col = thread.start(colon)          -- colon display, NE-2 bulbs
 
+print("system running")

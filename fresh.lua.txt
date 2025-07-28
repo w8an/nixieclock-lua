@@ -1,0 +1,63 @@
+-- fresh.lua.txt
+-- commands to remove installed samples --
+--
+
+Burn Whitecat Lua RTOS to ESP32 device
+
+  https://github.com/whitecatboard/Lua-RTOS-ESP32
+
+C:\Users\Steve\Downloads\esp32\whitecat>wcc -p COM15 -f -ffs
+
+To place device into programming mode:
+
+  Press and hold BOOT button
+  Press and release EN button
+  Release BOOT button
+
+---
+
+rm /examples/lua/abp.lua
+rm /examples/lua/adc-tmp36.lua 
+rm /examples/lua/ble-eddistone-txpow.lua
+rm /examples/lua/ble-eddystone.lua
+rm /examples/lua/ble-scan.lua
+rm /examples/lua/blink.lua
+rm /examples/lua/bme280-tft.lua
+rm /examples/lua/eddystone.lua
+rm /examples/lua/esp-touch.lua
+rm /examples/lua/i2c.lua
+rm /examples/lua/lora.lua
+rm /examples/lua/mqtt.lua
+rm /examples/lua/neopixel.lua
+rm /examples/lua/pwm.lua
+rm /examples/lua/stepper.lua
+rm /examples/lua/uart-terminal.lua
+rm /examples/lua/wifi.lua
+rm /examples/lua/wps-pin.lua
+rm /examples/lua
+rm /examples
+
+rm /lib/lua/ltn12.lua
+rm /lib/lua/mbox.lua
+rm /lib/lua/mime.lua
+
+rm /lib/lua/socket/core.lua
+rm /lib/lua/socket/ftp.lua
+rm /lib/lua/socket/headers.lua
+rm /lib/lua/socket/http.lua
+rm /lib/lua/socket/smtp.lua
+rm /lib/lua/socket/tp.lua
+rm /lib/lua/socket/url.lua
+rm /lib/lua/socket.lua
+rm /lib/lua/socket
+
+rm /lib/lua/cjson/util.lua
+rm /lib/lua/cjson
+
+rm /lib/lua/mime/core.lua
+rm /lib/lua/mime
+rm /lib/lua
+rm /lib
+
+rm /www/index.lua
+rm /www
